@@ -6,14 +6,18 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // Create a new listing
 exports.createListing = async (req, res) => {
   try {
-    const { title, description, ownerId, chargerType, pricePerHour } = req.body;
+    const { title, description, ownerId, chargerType, pricePerHour, startTime, endTime } = req.body;
 
-    if (!title || !description || !ownerId || !chargerType || pricePerHour == null) {
-      return res.status(400).json({ error: 'title, description, ownerId, chargerType and pricePerHour are required' });
+    if (!title || !description || !ownerId || !chargerType || pricePerHour == null || !startTime || !endTime) {
+      return res.status(400).json({ error: 'title, description, ownerId, chargerType, pricePerHour, startTime and endTime are required' });
     }
 
     if (!isValidObjectId(ownerId)) {
       return res.status(400).json({ error: 'Invalid ownerId format' });
+    }
+
+    if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
+      return res.status(400).json({ error: 'endTime must be after startTime' });
     }
 
     const listingData = {
