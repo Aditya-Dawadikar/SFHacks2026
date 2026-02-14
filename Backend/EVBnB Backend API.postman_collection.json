@@ -1,0 +1,763 @@
+{
+	"info": {
+		"_postman_id": "c41159c2-3f33-4a18-a55b-76d64f5648ac",
+		"name": "EVBnB Backend API",
+		"description": "Collection to manually test EVBnB backend API endpoints. Set environment variable `base_url` to `http://127.0.0.1:5001/api` (or your server URL).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26965139",
+		"_collection_link": "https://www.postman.com/rud-rax/workspace/ev-bnb/collection/26965139-c41159c2-3f33-4a18-a55b-76d64f5648ac?action=share&source=collection_link&creator=26965139"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "GET /health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /ping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ping",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ping"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "GET All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users?limit=10&skip=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "skip",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"test+{{timestamp}}@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"555-1234\",\n  \"userType\": \"tenant\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6990aba1a0256fbf62b8d67c"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET User by Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/email/:email",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"email",
+								":email"
+							],
+							"variable": [
+								{
+									"key": "email",
+									"value": "jack.owner@example.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Tenant Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/type/tenant",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"type",
+								"tenant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Owner Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/type/tenant",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"type",
+								"tenant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\",\n  \"phone\": \"555-9999\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"oldPassword\": \"password123\",\n  \"newPassword\": \"newPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/:id/password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":id",
+								"password"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Listings",
+			"item": [
+				{
+					"name": "GET All Listings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Listing by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Listings by Owner",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/owner/:ownerId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings",
+								"owner",
+								":ownerId"
+							],
+							"variable": [
+								{
+									"key": "ownerId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Listing",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Sample Listing\",\n  \"description\": \"Nice EV spot\",\n  \"ownerId\": \"<ownerId>\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/listings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Listing",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Listing",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"listings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reservations",
+			"item": [
+				{
+					"name": "GET All Reservations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Reservation by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Reservations by Tenant",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations/tenant/:tenantId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations",
+								"tenant",
+								":tenantId"
+							],
+							"variable": [
+								{
+									"key": "tenantId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Reservations by Owner",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations/owner/:ownerId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations",
+								"owner",
+								":ownerId"
+							],
+							"variable": [
+								{
+									"key": "ownerId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Reservation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"listingId\": \"<listingId>\",\n  \"tenantId\": \"<tenantId>\",\n  \"startDate\": \"2026-03-01T10:00:00.000Z\",\n  \"endDate\": \"2026-03-01T12:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reservations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Reservation",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Reservation",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reservations/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reservations",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Schedules",
+			"item": [
+				{
+					"name": "GET All Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/schedules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"schedules"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Schedule by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/schedules/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"schedules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"listingId\": \"<listingId>\",\n  \"ownerId\": \"<ownerId>\",\n  \"availableSlots\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/schedules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"schedules"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sessions",
+			"item": [
+				{
+					"name": "GET All Sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sessions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"listingId\": \"<listingId>\",\n  \"tenantId\": \"<tenantId>\",\n  \"startTime\": \"2026-03-01T10:00:00.000Z\",\n  \"endTime\": \"2026-03-01T11:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sessions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "GET All Transactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sessionId\": \"<sessionId>\",\n  \"amount\": 12.50,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:5001/api"
+		}
+	]
+}
