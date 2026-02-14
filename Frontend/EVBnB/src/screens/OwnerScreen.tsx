@@ -1,69 +1,49 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Box, Container, Typography, Card, CardContent, Button, AppBar, Toolbar } from '@mui/material'
-import BuildIcon from '@mui/icons-material/Build'
-import LogoutIcon from '@mui/icons-material/Logout'
+import { useState } from 'react'
+import { Box } from '@mui/material'
+import OwnerSidebar, { DRAWER_WIDTH } from '../components/OwnerSidebar'
+import OwnerDashboard from './Owner/OwnerDashboard'
+import OwnerHistory from './Owner/OwnerHistory'
+import ManageListings from './Owner/ManageListings'
+import ViewReservations from './Owner/ViewReservations'
+import EarningsPage from './Owner/EarningsPage'
+import SettingsPage from './Owner/SettingsPage'
 
 export default function OwnerScreen() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [currentPage, setCurrentPage] = useState('dashboard')
 
-  useEffect(() => {
-    const user = localStorage.getItem('user')
-    if (user) {
-      const userData = JSON.parse(user)
-      setEmail(userData.email)
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <OwnerDashboard onNavigate={setCurrentPage} />
+      case 'history':
+        return <OwnerHistory onNavigate={setCurrentPage} />
+      case 'listings':
+        return <ManageListings onNavigate={setCurrentPage} />
+      case 'reservations':
+        return <ViewReservations onNavigate={setCurrentPage} />
+      case 'earnings':
+        return <EarningsPage onNavigate={setCurrentPage} />
+      case 'settings':
+        return <SettingsPage onNavigate={setCurrentPage} />
+      default:
+        return <OwnerDashboard onNavigate={setCurrentPage} />
     }
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-    navigate('/login')
   }
 
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            EVBnB - Owner Dashboard
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {email}
-          </Typography>
-          <Button color="inherit" startIcon={<LogoutIcon />} onClick={handleLogout}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Typography variant="h3" component="h2" gutterBottom>
-            Owner Dashboard
-          </Typography>
-          <Typography variant="body1" color="textSecondary" paragraph>
-            Manage your EV charging spots and reservations
-          </Typography>
-
-          <Card sx={{ mt: 4 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <BuildIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                  <Typography variant="h6">Manage Listings</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Add and manage your EV charging spot listings
-                  </Typography>
-                </Box>
-              </Box>
-              <Button variant="contained" sx={{ mt: 2 }}>
-                Go to Listings
-              </Button>
-            </CardContent>
-          </Card>
-        </Box>
-      </Container>
-    </>
+    <Box sx={{ display: 'flex' }}>
+      <OwnerSidebar activeTab={currentPage} onTabChange={setCurrentPage} />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          ml: `${DRAWER_WIDTH}px`,
+          backgroundColor: '#fafafa',
+          minHeight: '100vh',
+        }}
+      >
+        {renderContent()}
+      </Box>
+    </Box>
   )
 }
