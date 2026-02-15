@@ -19,7 +19,7 @@
 
 ## 🔗 Deployed Link
 
-> **[Live Demo](#)** - *Coming Soon*
+> **[Live Demo](#)** - https://youtu.be/XenX8vnUOwc
 
 ---
 
