@@ -8,13 +8,6 @@
   <strong>Share your EV charger. Charge anywhere. Earn while helping the planet.</strong>
 </p>
 
-<p align="center">
-  <a href="#deployed-link">View Demo</a> •
-  <a href="#features">Features</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#quick-start">Quick Start</a>
-</p>
-
 ---
 
 ## 🔗 Deployed Link
