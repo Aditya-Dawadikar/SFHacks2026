@@ -10,7 +10,7 @@
 
 ---
 
-## 🔗 Deployed Link
+## 🔗 Demo Link
 
 > **[Live Demo](https://youtu.be/XenX8vnUOwc
 )**
