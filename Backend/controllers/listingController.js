@@ -1,19 +1,56 @@
 const mongoose = require('mongoose');
 const Listing = require('../models/Listing');
+const Schedule = require('../models/Schedule');
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// Helper function to generate hourly schedules
+const generateHourlySchedules = (listingId, ownerId, startTime, endTime) => {
+  const schedules = [];
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  let current = new Date(start);
+  while (current < end) {
+    const nextHour = new Date(current);
+    nextHour.setHours(nextHour.getHours() + 1);
+
+    // Don't create schedule if it would exceed endTime
+    if (nextHour > end) break;
+
+    schedules.push({
+      listingId,
+      ownerId,
+      openingTime: current.toISOString(),
+      closingTime: nextHour.toISOString(),
+      isAvailable: true,
+      isBlocked: false,
+      minSessionDuration: 1,
+      maxSessionDuration: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    current = nextHour;
+  }
+  return schedules;
+};
 
 // Create a new listing
 exports.createListing = async (req, res) => {
   try {
-    const { title, description, ownerId, chargerType, pricePerHour } = req.body;
+    const { title, description, ownerId, chargerType, pricePerHour, startTime, endTime } = req.body;
 
-    if (!title || !description || !ownerId || !chargerType || pricePerHour == null) {
-      return res.status(400).json({ error: 'title, description, ownerId, chargerType and pricePerHour are required' });
+    if (!title || !description || !ownerId || !chargerType || pricePerHour == null || !startTime || !endTime) {
+      return res.status(400).json({ error: 'title, description, ownerId, chargerType, pricePerHour, startTime and endTime are required' });
     }
 
     if (!isValidObjectId(ownerId)) {
       return res.status(400).json({ error: 'Invalid ownerId format' });
+    }
+
+    if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
+      return res.status(400).json({ error: 'endTime must be after startTime' });
     }
 
     const listingData = {
@@ -24,8 +61,17 @@ exports.createListing = async (req, res) => {
 
     const newListing = new Listing(listingData);
     const savedListing = await newListing.save();
+
+    // Generate and save hourly schedules
+    const schedulesData = generateHourlySchedules(savedListing._id, ownerId, startTime, endTime);
+    const createdSchedules = await Schedule.insertMany(schedulesData);
+
     const populated = await savedListing.populate('ownerId', 'firstName lastName email');
-    res.status(201).json(populated);
+    res.status(201).json({
+      listing: populated,
+      schedules: createdSchedules,
+      schedulesCount: createdSchedules.length
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
