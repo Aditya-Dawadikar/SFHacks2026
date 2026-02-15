@@ -19,8 +19,8 @@
 
 ## 🔗 Deployed Link
 
-> **[Live Demo](#)** - https://youtu.be/XenX8vnUOwc
-
+> **[Live Demo](https://youtu.be/XenX8vnUOwc
+)**
 ---
 
 ## 📖 About
