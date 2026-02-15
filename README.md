@@ -74,7 +74,38 @@ The platform addresses the growing need for accessible EV charging infrastructur
 | **Mongoose** | ODM for MongoDB |
 | **bcryptjs** | Password hashing |
 | **CORS** | Cross-origin requests |
+### Data Analysis
+| Technology | Purpose |
+|------------|----------|
+| **Snowflake** | Data storage & transformation |
+| **Python (Pandas)** | Data manipulation |
+| **Snowflake Notebooks** | Integrated SQL/Python workflows |
+| **Visualization Tools** | Usage distribution analysis |
 
+---
+
+## 📊 Data Analysis
+
+The project includes comprehensive EV charging usage and availability analysis to understand daily charging behavior and identify peak usage periods.
+
+### Objective
+Provide data-driven insights into EV charging behavior to support smarter infrastructure planning, better availability forecasting, and future machine learning applications.
+
+### Data Sources
+- **ACN Dataset** - Real EV charging data from Caltech's Adaptive Charging Networks
+- **Mendeley Electric Vehicle Charging Dataset** - Synthetic data generated using CTGAN and KDE from Caltech data (29,600 days)
+- **Kaggle EV Charging Patterns** - 1,320 samples of charging session metrics
+
+### Methodology
+- Measures actual charger occupancy (not just arrival patterns)
+- Accounts for full duration of each charging session
+- Expands sessions across active hourly intervals
+- Creates 24-hour utilization distribution to identify peak and low-demand periods
+
+### Key Insights
+- Identification of high congestion hours and low utilization periods
+- Understanding of morning, midday, and evening charging demand patterns
+- Foundation for availability estimation and predictive modeling
 ---
 
 ## 📸 Screenshots
@@ -213,7 +244,9 @@ SFHacks2026/
 │       │   └── theme/            # Theme configuration
 │       └── public/               # Static assets
 │
-└── DataAnalysis/                 # Data analysis scripts
+└── DataAnalysis/                 # EV charging usage & availability analysis
+    └── notebooks/
+        └── data_analysis.ipynb   # Jupyter notebook for analysis
 ```
 
 ---
