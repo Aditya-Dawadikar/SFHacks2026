@@ -72,6 +72,14 @@ const listingSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  startTime: {
+    type: Date,
+    default: Date.now
+  },
+  endTime: {
+    type: Date,
+    default: Date.now
   }
 });
 

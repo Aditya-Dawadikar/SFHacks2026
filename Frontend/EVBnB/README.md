@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# EVBnB Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend application for EVBnB - an EV charging station rental platform.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** with TypeScript
+- **Vite** for fast development and building
+- **Material UI (MUI)** for UI components
+- **React Router** for navigation
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+- Node.js (v18 or higher)
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Navigate to the Frontend directory:
+   ```bash
+   cd Frontend/EVBnB
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Running the Application
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Development mode:
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This starts the development server with hot module replacement. The app will be available at `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Build for production:
+```bash
+npm run build
 ```
+
+### Preview production build:
+```bash
+npm run preview
+```
+
+### Lint the codebase:
+```bash
+npm run lint
+```
+
+## Project Structure
+
+```
+Frontend/EVBnB/
+├── index.html            # HTML entry point
+├── package.json
+├── vite.config.ts        # Vite configuration
+├── tsconfig.json         # TypeScript configuration
+├── eslint.config.js      # ESLint configuration
+├── public/               # Static assets
+└── src/
+    ├── main.tsx          # Application entry point
+    ├── App.tsx           # Root component
+    ├── App.css           # App styles
+    ├── index.css         # Global styles
+    ├── assets/           # Images, fonts, etc.
+    └── screens/          # Page components
+        ├── LoginScreen.tsx
+        ├── OwnerScreen.tsx
+        └── TenantScreen.tsx
+```
+
+## Connecting to Backend
+
+Make sure the backend server is running on `http://localhost:5000` before using the application. See the Backend README for setup instructions.
