@@ -109,7 +109,7 @@ The result provides a realistic picture of when charging infrastructure is most 
 
 This methodology allows us to identify high congestion hours, detect periods of low utilization and understand whether charging demand is concentrated in morning, midday, or evening. AS  duration is considered, the analysis reflects real infrastructure load rather than just session starts. By comparing usage intensity across different days this analysis can lay groundwork for estimating availability levels.
 
-![alt text](https://file%2B.vscode-resource.vscode-cdn.net/Users/ha5hkat/Code/sf-hacks/SFHacks2026/DataAnalysis/STREAMLIT_MEDIA_FILE_B54C9EEAF96F4EE4A9418D525D7F03E1.png?version%3D1771182635661)
+![alt text](./STREAMLIT_MEDIA_FILE_B54C9EEAF96F4EE4A9418D525D7F03E1.png)
 
 The comparison shows clear and distinct daily charging behavior patterns across the three locations. All locations exhibit very low usage during early morning hours (roughly 3:00–10:00 UTC), followed by a sharp increase beginning in the early afternoon. 
 
