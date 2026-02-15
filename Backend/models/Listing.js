@@ -21,8 +21,8 @@ const listingSchema = new mongoose.Schema({
     zipCode: String,
     country: String,
     coordinates: {
-      latitude: Number,
-      longitude: Number
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
     }
   },
   chargerType: {
@@ -83,4 +83,5 @@ const listingSchema = new mongoose.Schema({
   }
 });
 
+listingSchema.index({ 'location.coordinates': '2dsphere' });
 module.exports = mongoose.model('Listing', listingSchema);

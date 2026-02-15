@@ -9,7 +9,7 @@ const reservationSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Not required for open slots
   },
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,

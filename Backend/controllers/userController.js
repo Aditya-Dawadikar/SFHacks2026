@@ -1,3 +1,34 @@
+// Bulk upload users
+exports.bulkCreateUsers = async (req, res) => {
+  try {
+    if (!Array.isArray(req.body)) {
+      return res.status(400).json({ error: 'Request body must be an array of users' });
+    }
+    const results = [];
+    for (const userData of req.body) {
+      const validationErrors = validateUserInput(userData);
+      if (validationErrors.length > 0) {
+        results.push({ email: userData.email, status: 'failed', errors: validationErrors });
+        continue;
+      }
+      const existingUser = await User.findOne({ email: userData.email.toLowerCase() });
+      if (existingUser) {
+        results.push({ email: userData.email, status: 'failed', errors: ['User with this email already exists'] });
+        continue;
+      }
+      const newUser = new User({
+        ...userData,
+        email: userData.email.toLowerCase(),
+        password: await hashPassword(userData.password)
+      });
+      await newUser.save();
+      results.push({ email: userData.email, status: 'success' });
+    }
+    res.status(201).json({ message: 'Bulk user upload complete', results });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Bulk user upload failed' });
+  }
+};
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
@@ -118,9 +149,21 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    let listings = [];
+    if (user.userType === 'owner') {
+      const Listing = require('../models/Listing');
+      listings = await Listing.find({ ownerId: user._id });
+      // Calculate stats
+      user.owner = user.owner || {};
+      user.owner.totalListings = listings.length;
+      user.owner.rating = listings.length > 0 ? (listings.reduce((sum, l) => sum + (l.rating || 0), 0) / listings.length) : 0;
+      user.owner.totalEarnings = listings.reduce((sum, l) => sum + (l.totalEarnings || 0), 0);
+    }
+
     res.status(200).json({
       message: 'User retrieved successfully',
-      user
+      user,
+      listings
     });
   } catch (error) {
     console.error('Error fetching user:', error);

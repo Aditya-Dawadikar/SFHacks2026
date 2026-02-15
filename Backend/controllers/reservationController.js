@@ -340,3 +340,49 @@ exports.getReservationsByListing = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Get available slots for a listing (for booking UI)
+exports.getAvailableSlotsForListing = async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    if (!isValidObjectId(listingId)) {
+      return res.status(400).json({ error: 'Invalid listingId' });
+    }
+    // Only show slots for today and future, status 'pending', no tenantId
+    const today = new Date();
+    const slots = await Reservation.find({
+      listingId,
+      status: 'pending',
+      tenantId: { $exists: false },
+      date: { $gte: new Date(today.toDateString()) }
+    }).sort({ date: 1, reservedStartTime: 1 });
+    res.status(200).json(slots);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Book a slot (update reservation with tenantId and status)
+exports.bookSlot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.body;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'tenantId is required' });
+    }
+    const reservation = await Reservation.findById(id);
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation slot not found' });
+    }
+    if (reservation.tenantId) {
+      return res.status(409).json({ error: 'Slot already booked' });
+    }
+    reservation.tenantId = tenantId;
+    reservation.status = 'reserved';
+    reservation.updatedAt = new Date();
+    await reservation.save();
+    res.status(200).json({ message: 'Slot booked successfully', reservation });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

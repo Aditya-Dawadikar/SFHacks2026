@@ -26,7 +26,13 @@ router.post('/', reservationController.createReservation);
 // PUT update reservation
 router.put('/:id', reservationController.updateReservation);
 
+// PUT book a slot (update reservation with tenantId and status)
+router.put('/:id/book', reservationController.bookSlot);
+
 // DELETE reservation
 router.delete('/:id', reservationController.deleteReservation);
+
+// GET available slots for a listing (for booking UI)
+router.get('/available/:listingId', reservationController.getAvailableSlotsForListing);
 
 module.exports = router;

@@ -1,3 +1,54 @@
+// Bulk upload listings
+exports.bulkCreateListings = async (req, res) => {
+  try {
+    if (!Array.isArray(req.body)) {
+      return res.status(400).json({ error: 'Request body must be an array of listings' });
+    }
+    const results = [];
+    for (const listingData of req.body) {
+      try {
+        // Validate required fields
+        const { title, description, ownerId, chargerType, pricePerHour, startTime, endTime } = listingData;
+        if (!title || !description || !ownerId || !chargerType || pricePerHour == null || !startTime || !endTime) {
+          results.push({ title, status: 'failed', errors: ['Missing required fields'] });
+          continue;
+        }
+        // Convert coordinates to GeoJSON Point if present
+        let listingDataToSave = { ...listingData, createdAt: new Date(), updatedAt: new Date() };
+        if (
+          listingData.location &&
+          listingData.location.coordinates &&
+          listingData.location.coordinates.latitude !== undefined &&
+          listingData.location.coordinates.longitude !== undefined
+        ) {
+          listingDataToSave.location.coordinates = {
+            type: 'Point',
+            coordinates: [
+              listingData.location.coordinates.longitude,
+              listingData.location.coordinates.latitude
+            ]
+          };
+        }
+        const newListing = new Listing(listingDataToSave);
+        const savedListing = await newListing.save();
+        // Generate and save hourly schedules
+        const schedulesData = generateHourlySchedules(savedListing._id, ownerId, startTime, endTime);
+        if (schedulesData.length === 0) {
+          await Listing.findByIdAndDelete(savedListing._id);
+          results.push({ title, status: 'failed', errors: ['startTime and endTime must be at least 1 hour apart'] });
+          continue;
+        }
+        await Schedule.insertMany(schedulesData);
+        results.push({ title, status: 'success' });
+      } catch (err) {
+        results.push({ title: listingData.title, status: 'failed', errors: [err.message] });
+      }
+    }
+    res.status(201).json({ message: 'Bulk listing upload complete', results });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Bulk listing upload failed' });
+  }
+};
 const mongoose = require('mongoose');
 const Listing = require('../models/Listing');
 const Schedule = require('../models/Schedule');
@@ -53,12 +104,25 @@ exports.createListing = async (req, res) => {
       return res.status(400).json({ error: 'endTime must be after startTime' });
     }
 
-    const listingData = {
+    let listingData = {
       ...req.body,
       createdAt: new Date(),
       updatedAt: new Date()
     };
-
+    if (
+      req.body.location &&
+      req.body.location.coordinates &&
+      req.body.location.coordinates.latitude !== undefined &&
+      req.body.location.coordinates.longitude !== undefined
+    ) {
+      listingData.location.coordinates = {
+        type: 'Point',
+        coordinates: [
+          req.body.location.coordinates.longitude,
+          req.body.location.coordinates.latitude
+        ]
+      };
+    }
     const newListing = new Listing(listingData);
     const savedListing = await newListing.save();
 
@@ -102,7 +166,10 @@ exports.getAllListings = async (req, res) => {
       city,
       minPrice,
       maxPrice,
-      isActive
+      isActive,
+      latitude,
+      longitude,
+      radius
     } = req.query;
 
     const filter = {};
@@ -113,6 +180,20 @@ exports.getAllListings = async (req, res) => {
       filter.pricePerHour = {};
       if (minPrice !== undefined) filter.pricePerHour.$gte = Number(minPrice);
       if (maxPrice !== undefined) filter.pricePerHour.$lte = Number(maxPrice);
+    }
+
+    // Geolocation filtering
+    if (latitude && longitude && radius) {
+      // Convert radius from kilometers to meters
+      const radiusInMeters = Number(radius) * 1000;
+      filter['location.coordinates'] = {
+        $geoWithin: {
+          $centerSphere: [
+            [Number(longitude), Number(latitude)],
+            radiusInMeters / 6378137 // Earth's radius in meters
+          ]
+        }
+      };
     }
 
     const total = await Listing.countDocuments(filter);
