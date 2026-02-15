@@ -27,9 +27,15 @@ const processPayment = async (paymentDetails) => {
   };
 };
 
+const normalizeReservationStatus = (status) => {
+  if (status === 'payment failed') return 'payment_failed';
+  return status;
+};
+
 // Validation helper for reservation create/update
 const validateReservationInput = (data, isCreate = true) => {
   const errors = [];
+  const normalizedStatus = normalizeReservationStatus(data.status);
 
   if (isCreate) {
     const required = ['tenantId', 'listingId', 'date', 'reservedStartTime', 'reservedEndTime', 'schedules', 'paymentMethod'];
@@ -65,8 +71,8 @@ const validateReservationInput = (data, isCreate = true) => {
     }
   }
 
-  if (data.status != null && !['pending', 'reserved', 'cancelled', 'charging', 'charged'].includes(data.status)) {
-    errors.push('status must be one of: pending, reserved, cancelled, charging, charged');
+  if (normalizedStatus != null && !['pending', 'reserved', 'payment_failed', 'cancelled', 'charging', 'charged'].includes(normalizedStatus)) {
+    errors.push('status must be one of: pending, reserved, payment_failed, cancelled, charging, charged');
   }
 
   if (data.paymentMethod != null && !['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'digital_wallet'].includes(data.paymentMethod)) {
@@ -85,7 +91,8 @@ exports.createReservation = async (req, res) => {
     }
 
     const { listingId, tenantId, schedules: scheduleIds, price, date, reservedStartTime, reservedEndTime, paymentMethod } = req.body;
-    const schedules = scheduleIds || [];
+    const dedupedScheduleIds = [...new Set((scheduleIds || []).map((id) => String(id)))];
+    const schedules = dedupedScheduleIds;
 
     // Fetch listing to get ownerId and pricePerHour
     const listing = await Listing.findById(listingId).select('ownerId pricePerHour');
@@ -94,19 +101,32 @@ exports.createReservation = async (req, res) => {
     }
 
     // Validate slots
-    if (scheduleIds && scheduleIds.length > 0) {
-      const slots = await Schedule.find({ _id: { $in: scheduleIds } });
-      if (slots.length !== scheduleIds.length) {
+    if (dedupedScheduleIds.length > 0) {
+      const slots = await Schedule.find({ _id: { $in: dedupedScheduleIds } });
+      if (slots.length !== dedupedScheduleIds.length) {
         return res.status(400).json({ errors: ['One or more schedule IDs do not exist'] });
       }
       const wrongListing = slots.some(s => s.listingId.toString() !== listingId.toString());
       if (wrongListing) {
         return res.status(400).json({ errors: ['All slots must belong to the specified listing'] });
       }
-      const unavailable = slots.some(s => !s.isAvailable || s.isBlocked);
-      if (unavailable) {
-        return res.status(400).json({ errors: ['One or more slots are not available for booking'] });
-      }
+    }
+
+    // Atomically claim slots to prevent concurrent double booking
+    const claimTimestamp = new Date();
+    const claimResult = await Schedule.updateMany(
+      { _id: { $in: dedupedScheduleIds }, isAvailable: true, isBlocked: false },
+      { $set: { isAvailable: false, updatedAt: claimTimestamp } }
+    );
+    if (claimResult.modifiedCount !== dedupedScheduleIds.length) {
+      // Roll back only slots claimed in this attempt
+      await Schedule.updateMany(
+        { _id: { $in: dedupedScheduleIds }, isAvailable: false, updatedAt: claimTimestamp },
+        { $set: { isAvailable: true, updatedAt: new Date() } }
+      );
+      return res.status(409).json({
+        error: 'One or more slots were just booked by another user. Please try different slots.'
+      });
     }
 
     // Calculate price if not provided (based on number of slots and listing price)
@@ -151,14 +171,6 @@ exports.createReservation = async (req, res) => {
       const newTransaction = new Transaction(transactionData);
       const savedTransaction = await newTransaction.save();
 
-      // Mark slots as unavailable (reserved)
-      if (scheduleIds && scheduleIds.length > 0) {
-        await Schedule.updateMany(
-          { _id: { $in: scheduleIds } },
-          { $set: { isAvailable: false, updatedAt: new Date() } }
-        );
-      }
-
       // Update reservation to reserved
       savedReservation.status = 'reserved';
       savedReservation.updatedAt = new Date();
@@ -176,9 +188,16 @@ exports.createReservation = async (req, res) => {
         transaction: savedTransaction
       });
     } else {
-      // Payment failed - keep reservation as pending
+      // Payment failed - release slots and keep reservation with failure status
+      await Schedule.updateMany(
+        { _id: { $in: dedupedScheduleIds } },
+        { $set: { isAvailable: true, updatedAt: new Date() } }
+      );
+      savedReservation.status = 'payment_failed';
+      savedReservation.updatedAt = new Date();
+      await savedReservation.save();
       res.status(402).json({
-        message: 'Reservation created but payment failed',
+        message: 'Payment failed. Reservation saved with status payment_failed.',
         reservation: savedReservation,
         paymentError: paymentResult.message
       });
@@ -239,8 +258,10 @@ exports.updateReservation = async (req, res) => {
       return res.status(404).json({ error: 'Reservation not found' });
     }
 
+    const normalizedStatus = normalizeReservationStatus(req.body.status);
+
     // If status changed to cancelled, release the slots
-    if (req.body.status === 'cancelled' && existingReservation.status !== 'cancelled') {
+    if (normalizedStatus === 'cancelled' && existingReservation.status !== 'cancelled') {
       if (existingReservation.schedules && existingReservation.schedules.length > 0) {
         await Schedule.updateMany(
           { _id: { $in: existingReservation.schedules } },
@@ -250,6 +271,9 @@ exports.updateReservation = async (req, res) => {
     }
 
     const updateData = { ...req.body, updatedAt: new Date() };
+    if (updateData.status != null) {
+      updateData.status = normalizedStatus;
+    }
     const reservation = await Reservation.findByIdAndUpdate(
       req.params.id,
       updateData,
