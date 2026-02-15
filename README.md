@@ -86,10 +86,10 @@ The platform addresses the growing need for accessible EV charging infrastructur
 
 ## 📊 Data Analysis
 
-The project includes comprehensive EV charging usage and availability analysis to understand daily charging behavior and identify peak usage periods. See the [full analysis documentation](DataAnalysis/README.md) for details.
+The project includes comprehensive EV charging usage and availability analysis to understand daily charging behavior and identify peak usage periods. This analysis powers **dynamic pricing** for users, adjusting rates based on real-time demand patterns and availability. See the [full analysis documentation](DataAnalysis/README.md) for details.
 
 ### Objective
-Provide data-driven insights into EV charging behavior to support smarter infrastructure planning, better availability forecasting, and future machine learning applications.
+Provide data-driven insights into EV charging behavior to support smarter infrastructure planning, better availability forecasting and dynamic pricing algorithms.
 
 ### Data Sources
 - **ACN Dataset** - Real EV charging data from Caltech's Adaptive Charging Networks
