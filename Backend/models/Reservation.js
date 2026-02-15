@@ -11,11 +11,6 @@ const reservationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  ownerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
   reservedDate: {
     type: Date,
     required: true

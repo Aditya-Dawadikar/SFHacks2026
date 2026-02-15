@@ -15,11 +15,7 @@ exports.createTransaction = async (req, res) => {
 exports.getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find()
-      .populate('sessionId')
-      .populate('reservationId')
-      .populate('tenantId', 'firstName lastName email')
-      .populate('ownerId', 'firstName lastName email')
-      .populate('listingId', 'title location');
+      .populate('reservationId');
     res.status(200).json(transactions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -30,11 +26,7 @@ exports.getAllTransactions = async (req, res) => {
 exports.getTransactionById = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id)
-      .populate('sessionId')
-      .populate('reservationId')
-      .populate('tenantId', 'firstName lastName email')
-      .populate('ownerId', 'firstName lastName email')
-      .populate('listingId', 'title location');
+      .populate('reservationId');
     if (!transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
@@ -74,24 +66,15 @@ exports.deleteTransaction = async (req, res) => {
   }
 };
 
-// Get transactions by tenant
-exports.getTransactionsByTenant = async (req, res) => {
+// Get transaction by reservation
+exports.getTransactionByReservation = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ tenantId: req.params.tenantId })
-      .populate('listingId', 'title location');
-    res.status(200).json(transactions);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Get transactions by owner
-exports.getTransactionsByOwner = async (req, res) => {
-  try {
-    const transactions = await Transaction.find({ ownerId: req.params.ownerId })
-      .populate('listingId', 'title location')
-      .populate('tenantId', 'firstName lastName email');
-    res.status(200).json(transactions);
+    const transaction = await Transaction.findOne({ reservationId: req.params.reservationId })
+      .populate('reservationId');
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+    res.status(200).json(transaction);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
