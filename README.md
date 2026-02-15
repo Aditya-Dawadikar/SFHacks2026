@@ -86,7 +86,7 @@ The platform addresses the growing need for accessible EV charging infrastructur
 
 ## 📊 Data Analysis
 
-The project includes comprehensive EV charging usage and availability analysis to understand daily charging behavior and identify peak usage periods.
+The project includes comprehensive EV charging usage and availability analysis to understand daily charging behavior and identify peak usage periods. See the [full analysis documentation](DataAnalysis/README.md) for details.
 
 ### Objective
 Provide data-driven insights into EV charging behavior to support smarter infrastructure planning, better availability forecasting, and future machine learning applications.
