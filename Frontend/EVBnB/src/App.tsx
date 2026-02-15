@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
+import ChatWidget from './components/ChatWidget'
 
 
 const OwnerScreen = lazy(() => import('./screens/OwnerScreen'));
@@ -40,6 +41,7 @@ function App() {
         {/* Fallback redirect for unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ChatWidget />
     </BrowserRouter>
   )
 }
