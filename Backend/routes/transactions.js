@@ -5,14 +5,11 @@ const transactionController = require('../controllers/transactionController');
 // GET all transactions
 router.get('/', transactionController.getAllTransactions);
 
+// GET transaction by reservation (must be before /:id)
+router.get('/reservation/:reservationId', transactionController.getTransactionByReservation);
+
 // GET transaction by ID
 router.get('/:id', transactionController.getTransactionById);
-
-// GET transactions by tenant
-router.get('/tenant/:tenantId', transactionController.getTransactionsByTenant);
-
-// GET transactions by owner
-router.get('/owner/:ownerId', transactionController.getTransactionsByOwner);
 
 // POST create new transaction
 router.post('/', transactionController.createTransaction);
