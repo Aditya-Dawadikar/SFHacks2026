@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Container,
   Typography,
@@ -11,59 +12,23 @@ import {
   Chip,
   Button,
   Box,
+  CircularProgress,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import BreadcrumbNav from '../../components/BreadcrumbNav'
 
 interface Reservation {
-  id: string
-  tenantName: string
-  listingTitle: string
-  date: string
-  time: string
-  duration: string
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+  _id: string;
+  tenantId: { firstName: string; lastName: string } | string;
+  listingId: { title: string } | string;
+  date: string;
+  reservedStartTime: string;
+  reservedEndTime: string;
+  status: string;
 }
 
-const mockReservations: Reservation[] = [
-  {
-    id: '1',
-    tenantName: 'John Doe',
-    listingTitle: 'Downtown Charging Hub',
-    date: '2026-02-14',
-    time: '10:00 AM - 12:00 PM',
-    duration: '2 hours',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    tenantName: 'Alice Smith',
-    listingTitle: 'Airport Spot',
-    date: '2026-02-14',
-    time: '2:00 PM - 5:00 PM',
-    duration: '3 hours',
-    status: 'confirmed',
-  },
-  {
-    id: '3',
-    tenantName: 'Bob Johnson',
-    listingTitle: 'Downtown Charging Hub',
-    date: '2026-02-13',
-    time: '9:00 AM - 11:00 AM',
-    duration: '2 hours',
-    status: 'completed',
-  },
-  {
-    id: '4',
-    tenantName: 'Carol White',
-    listingTitle: 'Mall Parking',
-    date: '2026-02-12',
-    time: '3:00 PM - 4:00 PM',
-    duration: '1 hour',
-    status: 'cancelled',
-  },
-]
+const OWNER_ID = '699188b2520a11c02a03e088'; // Hardcoded for demo
 
 function getStatusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
   switch (status) {
@@ -85,6 +50,28 @@ interface ViewReservationsProps {
 }
 
 export default function ViewReservations({ onNavigate }: ViewReservationsProps) {
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`http://localhost:5000/api/reservations/owner/${OWNER_ID}`);
+        if (!res.ok) throw new Error('Failed to fetch reservations');
+        const data = await res.json();
+        setReservations(data);
+      } catch (err: any) {
+        setError(err.message || 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReservations();
+  }, []);
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <BreadcrumbNav
@@ -98,69 +85,67 @@ export default function ViewReservations({ onNavigate }: ViewReservationsProps) 
         Reservations
       </Typography>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Tenant Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Listing</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Time</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 'bold' }}>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {mockReservations.map((reservation) => (
-              <TableRow key={reservation.id} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
-                <TableCell sx={{ fontWeight: '600' }}>{reservation.tenantName}</TableCell>
-                <TableCell>{reservation.listingTitle}</TableCell>
-                <TableCell>{reservation.date}</TableCell>
-                <TableCell>{reservation.time}</TableCell>
-                <TableCell>{reservation.duration}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
-                    color={getStatusColor(reservation.status)}
-                    size="small"
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  {reservation.status === 'pending' && (
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckCircleIcon />}
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        startIcon={<CancelIcon />}
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  )}
-                  {reservation.status !== 'pending' && (
-                    <Typography variant="body2" color="textSecondary">
-                      —
-                    </Typography>
-                  )}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold' }}>Tenant Name</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Listing</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Time</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                  Actions
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {reservations.map((reservation) => {
+                const tenantName = typeof reservation.tenantId === 'object' ? `${reservation.tenantId.firstName} ${reservation.tenantId.lastName}` : reservation.tenantId;
+                const listingTitle = typeof reservation.listingId === 'object' ? reservation.listingId.title : reservation.listingId;
+                const duration = (() => {
+                  // Calculate duration in minutes
+                  const [sh, sm] = reservation.reservedStartTime.split(':').map(Number);
+                  const [eh, em] = reservation.reservedEndTime.split(':').map(Number);
+                  let mins = (eh * 60 + em) - (sh * 60 + sm);
+                  if (mins < 0) mins += 24 * 60;
+                  return mins >= 60 ? `${(mins / 60).toFixed(1)} hours` : `${mins} min`;
+                })();
+                return (
+                  <TableRow key={reservation._id} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
+                    <TableCell sx={{ fontWeight: '600' }}>{tenantName}</TableCell>
+                    <TableCell>{listingTitle}</TableCell>
+                    <TableCell>{new Date(reservation.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{reservation.reservedStartTime} - {reservation.reservedEndTime}</TableCell>
+                    <TableCell>{duration}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                        color={getStatusColor(reservation.status)}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        —
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Container>
   )
 }

@@ -1,4 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface SlotData {
+  _id: string;
+  date: string;
+  reservedStartTime: string;
+  reservedEndTime: string;
+  status: string;
+}
+// Hardcoded location data for suggestions
+const HARDCODED_LOCATIONS = [
+  { label: 'San Francisco, CA', latitude: 37.7749, longitude: -122.4194 },
+  { label: 'Oakland, CA', latitude: 37.8044, longitude: -122.2712 },
+  { label: 'San Jose, CA', latitude: 37.3382, longitude: -121.8863 },
+  { label: 'Berkeley, CA', latitude: 37.8715, longitude: -122.2730 },
+  { label: 'Palo Alto, CA', latitude: 37.4419, longitude: -122.1430 },
+]
 import {
   Container,
   Paper,
@@ -20,7 +36,10 @@ import {
   DialogActions,
   IconButton,
   Alert,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import SearchIcon from '@mui/icons-material/Search'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
@@ -73,129 +92,6 @@ interface ActiveSession {
   currentCost: number
 }
 
-const mockListings: ListingData[] = [
-  {
-    id: '1',
-    title: 'Fast Charger Downtown',
-    location: 'Downtown, San Francisco',
-    chargerType: 'DC Fast Charger',
-    pricePerHour: 8.5,
-    rating: 4.8,
-    reviews: 125,
-    available: true,
-    distance: '0.5 km',
-    image: 'https://images.unsplash.com/photo-1591290621749-2bffb66fa0cb?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1591290621749-2bffb66fa0cb?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1560958089-b8a63dd89c94?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1593642632823-8b785cb33842?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'available',
-    lat: 37.7949,
-    lng: -122.3977,
-  },
-  {
-    id: '2',
-    title: 'Level 2 Parking Lot',
-    location: 'Mission District, San Francisco',
-    chargerType: 'Level 2',
-    pricePerHour: 3.5,
-    rating: 4.6,
-    reviews: 87,
-    available: true,
-    distance: '1.2 km',
-    image: 'https://images.unsplash.com/photo-1593642632823-8b785cb33842?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1593642632823-8b785cb33842?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1600373422634-7f4233124b94?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1629645290559-f814de99e1c9?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'closes_soon',
-    lat: 37.7599,
-    lng: -122.4148,
-  },
-  {
-    id: '3',
-    title: 'Premium Fast Charge',
-    location: 'Financial District, San Francisco',
-    chargerType: 'DC Fast Charger',
-    pricePerHour: 9.5,
-    rating: 4.9,
-    reviews: 256,
-    available: true,
-    distance: '0.8 km',
-    image: 'https://images.unsplash.com/photo-1560958089-b8a63dd89c94?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1560958089-b8a63dd89c94?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1591290621749-2bffb66fa0cb?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1600373422634-7f4233124b94?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'available',
-    lat: 37.7942,
-    lng: -122.3962,
-  },
-  {
-    id: '4',
-    title: 'Convenient Level 2',
-    location: 'Marina District, San Francisco',
-    chargerType: 'Level 2',
-    pricePerHour: 4.0,
-    rating: 4.4,
-    reviews: 65,
-    available: false,
-    distance: '1.5 km',
-    image: 'https://images.unsplash.com/photo-1629645290559-f814de99e1c9?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1629645290559-f814de99e1c9?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1593642632823-8b785cb33842?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1560958089-b8a63dd89c94?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'closed',
-    lat: 37.8044,
-    lng: -122.4335,
-  },
-  {
-    id: '5',
-    title: 'Community Charging Hub',
-    location: 'Castro Valley, San Francisco',
-    chargerType: 'Level 1 & 2',
-    pricePerHour: 2.5,
-    rating: 4.3,
-    reviews: 92,
-    available: true,
-    distance: '3.2 km',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1591290621749-2bffb66fa0cb?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1629645290559-f814de99e1c9?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'opens_soon',
-    lat: 37.6688,
-    lng: -122.0808,
-  },
-  {
-    id: '6',
-    title: 'Ultra-Fast DC Station',
-    location: 'South Bay, San Francisco',
-    chargerType: 'DC Fast Charger',
-    pricePerHour: 10.0,
-    rating: 4.7,
-    reviews: 189,
-    available: true,
-    distance: '2.1 km',
-    image: 'https://images.unsplash.com/photo-1600373422634-7f4233124b94?w=500&h=300&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1600373422634-7f4233124b94?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1560958089-b8a63dd89c94?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1593642632823-8b785cb33842?w=800&h=600&fit=crop',
-    ],
-    availabilityStatus: 'available',
-    lat: 37.5485,
-    lng: -122.2471,
-  },
-]
-
 interface BrowseListingsProps {
   onNavigate: (page: string) => void
 }
@@ -228,7 +124,11 @@ const mockActiveSession: ActiveSession = {
 
 export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
   const [searchLocation, setSearchLocation] = useState('')
-  const [listings, setListings] = useState(mockListings)
+  const [geoFilter, setGeoFilter] = useState<{ latitude: number; longitude: number; radius: number } | null>(null)
+  const [locationSuggestions, setLocationSuggestions] = useState<{ label: string; latitude: number; longitude: number }[]>([])
+  const [listings, setListings] = useState<ListingData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [openReservationModal, setOpenReservationModal] = useState(false)
   const [selectedListing, setSelectedListing] = useState<ListingData | null>(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
@@ -243,24 +143,162 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
   const [showSessionBanner, setShowSessionBanner] = useState(true)
   const [openExtendSessionModal, setOpenExtendSessionModal] = useState(false)
   const [extendSessionDuration, setExtendSessionDuration] = useState(1)
+  // Slot selection state (must be inside component)
+  const [availableSlots, setAvailableSlots] = useState<SlotData[]>([])
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [slotsError, setSlotsError] = useState<string | null>(null)
 
   const handleSearch = () => {
+    // If user selected a suggestion, use its coordinates
+    const selected = HARDCODED_LOCATIONS.find(loc => loc.label.toLowerCase() === searchLocation.toLowerCase())
+    if (selected) {
+      setGeoFilter({ latitude: selected.latitude, longitude: selected.longitude, radius: 5 })
+      return
+    }
+    // Otherwise, fallback to text search (local filtering)
     if (searchLocation.trim()) {
-      // Filter listings by location
-      const filtered = mockListings.filter((listing) =>
+      const filtered = listings.filter((listing) =>
         listing.location.toLowerCase().includes(searchLocation.toLowerCase()),
       )
-      setListings(filtered.length > 0 ? filtered : mockListings)
+      setListings(filtered.length > 0 ? filtered : listings)
+    } else if (geoFilter) {
+      fetchListingsWithGeo(geoFilter.latitude, geoFilter.longitude, geoFilter.radius)
+    }
+  }
+  // Show suggestions as user types
+  useEffect(() => {
+    if (searchLocation.length > 0) {
+      setLocationSuggestions(
+        HARDCODED_LOCATIONS.filter(loc =>
+          loc.label.toLowerCase().includes(searchLocation.toLowerCase())
+        )
+      )
     } else {
-      setListings(mockListings)
+      setLocationSuggestions([])
+    }
+  }, [searchLocation])
+
+  const handleCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGeoFilter({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            radius: 5, // default 5km
+          })
+          setSearchLocation('')
+        },
+        (err) => {
+          setError('Failed to get current location')
+        }
+      )
+    } else {
+      setError('Geolocation is not supported by this browser')
     }
   }
 
-  const handleCurrentLocation = () => {
-    // Simulate getting current location
-    setSearchLocation('San Francisco')
-    setListings(mockListings)
+  // Duplicate handleCurrentLocation removed
+  // Fetch listings from backend on mount
+  // Fetch listings with geolocation filter
+  const fetchListingsWithGeo = async (latitude: number, longitude: number, radius: number) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:5000/api/listings?latitude=${latitude}&longitude=${longitude}&radius=${radius}`)
+      if (!res.ok) throw new Error('Failed to fetch listings')
+      const data = await res.json()
+      const mapped = (Array.isArray(data) ? data : data.listings).map((l: any) => ({
+        id: l._id,
+        title: l.title,
+        location: l.location && (l.location.address || l.location.city || l.location.state || l.location.country || ''),
+        chargerType: l.chargerType,
+        pricePerHour: l.pricePerHour,
+        rating: typeof l.rating === 'number' ? l.rating : 0,
+        reviews: typeof l.totalReviews === 'number' ? l.totalReviews : 0,
+        available: l.isActive !== undefined ? l.isActive : true,
+        distance: '',
+        availabilityStatus: l.isActive ? 'available' : 'closed',
+        lat: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[1] : 0,
+        lng: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[0] : 0,
+      }))
+      setListings(mapped)
+    } catch (err: any) {
+      setError(err.message || 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  // Reload handler
+  const handleReload = async () => {
+    setSearchLocation('')
+    setGeoFilter(null)
+    setLocationSuggestions([])
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('http://localhost:5000/api/listings')
+      if (!res.ok) throw new Error('Failed to fetch listings')
+      const data = await res.json()
+      const mapped = (Array.isArray(data) ? data : data.listings).map((l: any) => ({
+        id: l._id,
+        title: l.title,
+        location: l.location && (l.location.address || l.location.city || l.location.state || l.location.country || ''),
+        chargerType: l.chargerType,
+        pricePerHour: l.pricePerHour,
+        rating: typeof l.rating === 'number' ? l.rating : 0,
+        reviews: typeof l.totalReviews === 'number' ? l.totalReviews : 0,
+        available: l.isActive !== undefined ? l.isActive : true,
+        distance: '',
+        availabilityStatus: l.isActive ? 'available' : 'closed',
+        lat: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[1] : 0,
+        lng: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[0] : 0,
+      }))
+      setListings(mapped)
+    } catch (err: any) {
+      setError(err.message || 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (geoFilter) {
+      fetchListingsWithGeo(geoFilter.latitude, geoFilter.longitude, geoFilter.radius)
+    } else {
+      const fetchListings = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+          const res = await fetch('http://localhost:5000/api/listings')
+          if (!res.ok) throw new Error('Failed to fetch listings')
+          const data = await res.json()
+          const mapped = (Array.isArray(data) ? data : data.listings).map((l: any) => ({
+            id: l._id,
+            title: l.title,
+            location: l.location && (l.location.address || l.location.city || l.location.state || l.location.country || ''),
+            chargerType: l.chargerType,
+            pricePerHour: l.pricePerHour,
+            rating: typeof l.rating === 'number' ? l.rating : 0,
+            reviews: typeof l.totalReviews === 'number' ? l.totalReviews : 0,
+            available: l.isActive !== undefined ? l.isActive : true,
+            distance: '',
+            availabilityStatus: l.isActive ? 'available' : 'closed',
+            lat: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[1] : 0,
+            lng: l.location && l.location.coordinates && l.location.coordinates.coordinates ? l.location.coordinates.coordinates[0] : 0,
+          }))
+          setListings(mapped)
+        } catch (err: any) {
+          setError(err.message || 'Unknown error')
+        } finally {
+          setLoading(false)
+        }
+      }
+      fetchListings()
+    }
+  }, [geoFilter])
 
   const getChargerColor = (chargerType: string): 'success' | 'warning' | 'error' | 'info' => {
     if (chargerType.includes('DC Fast')) return 'error'
@@ -283,15 +321,29 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
     }
   }
 
-  const handleOpenReservation = (listing: ListingData) => {
+  const handleOpenReservation = async (listing: ListingData) => {
     setSelectedListing(listing)
     setOpenReservationModal(true)
     setCarouselIndex(0)
-    setReservationDate(new Date().toISOString().split('T')[0])
-    setReservationTime('10:00')
+    setReservationDate('')
+    setReservationTime('')
     setReservationDuration(1)
     setErrors({})
     setSubmitSuccess(false)
+    setAvailableSlots([])
+    setSelectedSlotId(null)
+    setSlotsLoading(true)
+    setSlotsError(null)
+    try {
+      const res = await fetch(`http://localhost:5000/api/reservations/available/${listing.id}`)
+      if (!res.ok) throw new Error('Failed to fetch available slots')
+      const data = await res.json()
+      setAvailableSlots(data)
+    } catch (err: any) {
+      setSlotsError(err.message || 'Could not load slots')
+    } finally {
+      setSlotsLoading(false)
+    }
   }
 
   const handleCloseReservation = () => {
@@ -341,45 +393,28 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleConfirmReservation = () => {
-    if (!validateForm()) {
+  const handleConfirmReservation = async () => {
+    if (!selectedSlotId || !selectedListing) {
+      setErrors({ ...errors, slot: 'Please select a slot' })
       return
     }
-
-    if (selectedListing) {
-      const reservationData = {
-        listingId: selectedListing.id,
-        listingTitle: selectedListing.title,
-        listingLocation: selectedListing.location,
-        chargerType: selectedListing.chargerType,
-        pricePerHour: selectedListing.pricePerHour,
-        reservationDate,
-        reservationTime,
-        reservationDuration,
-        estimatedCost: parseFloat(estimatedCost.toFixed(2)),
-        timestamp: new Date().toISOString(),
-      }
-
-      console.log('📋 RESERVATION SUBMITTED:', reservationData)
-      console.table(reservationData)
-
-      // Save upcoming reservation
-      const upcomingRes: UpcomingReservation = {
-        listingId: selectedListing.id,
-        listingTitle: selectedListing.title,
-        listingLocation: selectedListing.location,
-        reservationDate,
-        reservationTime,
-        reservationDuration,
-        estimatedCost: parseFloat(estimatedCost.toFixed(2)),
-      }
-      setUpcomingReservation(upcomingRes)
-      setShowReservationBanner(true)
-
+    setErrors({})
+    setSubmitSuccess(false)
+    // Use hardcoded valid tenantId for testing
+    const tenantId = '699188b3520a11c02a03e091';
+    try {
+      const res = await fetch(`http://localhost:5000/api/reservations/${selectedSlotId}/book`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId })
+      })
+      if (!res.ok) throw new Error('Failed to book slot')
       setSubmitSuccess(true)
       setTimeout(() => {
         handleCloseReservation()
       }, 2000)
+    } catch (err: any) {
+      setErrors({ ...errors, slot: err.message || 'Booking failed' })
     }
   }
 
@@ -419,8 +454,20 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
     handleCloseExtendSession()
   }
 
+  // Show loading and error for sanity test
+  if (loading) return <Container maxWidth="lg" sx={{ py: 4 }}><Typography>Loading listings...</Typography></Container>;
+  if (error) return <Container maxWidth="lg" sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container
+      maxWidth={false}
+      sx={{
+        py: 3,
+        px: { xs: 1, sm: 2, md: 4 },
+        width: '80vw',
+        maxWidth: '90vw',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Upcoming Reservation Banner */}
       {upcomingReservation && showReservationBanner && (
         <Paper
@@ -497,7 +544,7 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
         </Paper>
       )}
 
-      {/* Search Bar Section */}
+      {/* Search Bar Section + Reload Button */}
       <Paper
         sx={{
           p: 2,
@@ -508,61 +555,104 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
       >
         <Grid container spacing={1} alignItems="flex-end">
           <Grid item xs={12} sm={10}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Search locations..."
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: colors.primary, fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Button
-                      variant="text"
-                      onClick={handleCurrentLocation}
+            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search locations..."
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: colors.primary, fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Button
+                        variant="text"
+                        onClick={handleCurrentLocation}
+                        sx={{
+                          minWidth: '40px',
+                          height: '32px',
+                          color: colors.primary,
+                          padding: '4px',
+                          '&:hover': {
+                            backgroundColor: 'rgba(19, 170, 82, 0.1)',
+                          },
+                        }}
+                      >
+                        <MyLocationIcon sx={{ fontSize: 20 }} />
+                      </Button>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(19, 170, 82, 0.04)',
+                    border: `1.5px solid ${colors.mediumGray}`,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(19, 170, 82, 0.08)',
+                      borderColor: colors.primary,
+                      boxShadow: `0 2px 8px rgba(19, 170, 82, 0.1)`,
+                    },
+                    '&.Mui-focused': {
+                      backgroundColor: colors.white,
+                      borderColor: colors.primary,
+                      boxShadow: `0 4px 12px rgba(19, 170, 82, 0.15)`,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary,
+                    },
+                  },
+                }}
+              />
+              {/* Suggestions dropdown */}
+                            <Tooltip title="Reload Listings">
+                              <IconButton onClick={handleReload} sx={{ ml: 1 }} color="primary" size="large" aria-label="reload-listings">
+                                <RefreshIcon />
+                              </IconButton>
+                            </Tooltip>
+              {locationSuggestions.length > 0 && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 10,
+                  background: colors.white,
+                  border: `1px solid ${colors.mediumGray}`,
+                  borderTop: 'none',
+                  borderRadius: '0 0 8px 8px',
+                  boxShadow: '0 2px 8px rgba(19, 170, 82, 0.08)',
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }}>
+                  {locationSuggestions.map((loc) => (
+                    <Box
+                      key={loc.label}
                       sx={{
-                        minWidth: '40px',
-                        height: '32px',
-                        color: colors.primary,
-                        padding: '4px',
-                        '&:hover': {
-                          backgroundColor: 'rgba(19, 170, 82, 0.1)',
-                        },
+                        px: 2,
+                        py: 1,
+                        cursor: 'pointer',
+                        '&:hover': { background: 'rgba(19, 170, 82, 0.08)' },
+                      }}
+                      onClick={() => {
+                        setSearchLocation(loc.label)
+                        setGeoFilter({ latitude: loc.latitude, longitude: loc.longitude, radius: 5 })
+                        setLocationSuggestions([])
                       }}
                     >
-                      <MyLocationIcon sx={{ fontSize: 20 }} />
-                    </Button>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(19, 170, 82, 0.04)',
-                  border: `1.5px solid ${colors.mediumGray}`,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(19, 170, 82, 0.08)',
-                    borderColor: colors.primary,
-                    boxShadow: `0 2px 8px rgba(19, 170, 82, 0.1)`,
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: colors.white,
-                    borderColor: colors.primary,
-                    boxShadow: `0 4px 12px rgba(19, 170, 82, 0.15)`,
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: colors.primary,
-                  },
-                },
-              }}
-            />
+                      {loc.label}
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
           </Grid>
           <Grid item xs={12} sm={2}>
             <Button
@@ -594,11 +684,15 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
       </Box>
 
       {/* Listings Grid */}
-      <Grid container spacing={2}>
+
+      <Grid container spacing={4} justifyContent="center" alignItems="stretch">
         {listings.map((listing) => (
-          <Grid item xs={12} sm={4} md={3} key={listing.id}>
+          <Grid item xs={12} sm={6} md={4} lg={3} key={listing.id || listing._id} sx={{ mb: 3, px: 2, display: 'flex', justifyContent: 'center' }}>
             <Card
               sx={{
+                width: '100%',
+                maxWidth: 340,
+                minWidth: 0,
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -609,65 +703,10 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
                 },
                 overflow: 'hidden',
                 border: `1px solid ${colors.mediumGray}`,
+                margin: '0',
               }}
             >
-              {/* Image Section */}
-              <Box
-                sx={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '150px',
-                  overflow: 'hidden',
-                  backgroundColor: colors.lightGray,
-                }}
-              >
-                <Box
-                  component="img"
-                  src={listing.image}
-                  alt={listing.title}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.3s ease',
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1591290621749-2bffb66fa0cb?w=500&h=300&fit=crop'
-                  }}
-                />
-                {/* Availability Badge - Overlaid on image */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 12,
-                    left: 12,
-                    zIndex: 10,
-                  }}
-                >
-                  <Chip
-                    label={getAvailabilityBadge(listing.availabilityStatus).label}
-                    color={getAvailabilityBadge(listing.availabilityStatus).color}
-                    variant="filled"
-                    sx={{
-                      fontWeight: '600',
-                      fontSize: '0.85rem',
-                    }}
-                  />
-                </Box>
-                {/* Availability overlay tint */}
-                {!listing.available && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    }}
-                  />
-                )}
-              </Box>
+              {/* Image Section removed */}
 
               {/* Header with gradient background */}
               <Box
@@ -687,7 +726,11 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', color: colors.primary, fontSize: '0.9rem' }}>
                   <LocationOnIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                  <Typography variant="body2">{listing.location}</Typography>
+                  <Typography variant="body2">
+                    {typeof listing.location === 'string'
+                      ? listing.location
+                      : listing.location && (listing.location.address || listing.location.city || listing.location.state || listing.location.country || '')}
+                  </Typography>
                 </Box>
               </Box>
 
@@ -799,7 +842,7 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
             variant="text"
             onClick={() => {
               setSearchLocation('')
-              setListings(mockListings)
+              setListings(listings)
             }}
             sx={{ mt: 2, color: colors.primary }}
           >
@@ -820,72 +863,7 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
         <DialogContent sx={{ pt: 2 }}>
           {selectedListing && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* Image Carousel */}
-              <Box sx={{ position: 'relative' }}>
-                <Box
-                  component="img"
-                  src={selectedListing.images?.[carouselIndex] || selectedListing.image}
-                  alt={`${selectedListing.title} - Image ${carouselIndex + 1}`}
-                  sx={{
-                    width: '100%',
-                    height: '300px',
-                    objectFit: 'cover',
-                    borderRadius: 2,
-                  }}
-                />
-                {selectedListing.images && selectedListing.images.length > 1 && (
-                  <>
-                    <IconButton
-                      onClick={handlePrevImage}
-                      sx={{
-                        position: 'absolute',
-                        left: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        },
-                      }}
-                    >
-                      <ChevronLeftIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={handleNextImage}
-                      sx={{
-                        position: 'absolute',
-                        right: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        },
-                      }}
-                    >
-                      <ChevronRightIcon />
-                    </IconButton>
-                    {/* Image Counter */}
-                    <Typography
-                      sx={{
-                        position: 'absolute',
-                        bottom: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                        color: 'white',
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 1,
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      {carouselIndex + 1} / {selectedListing.images.length}
-                    </Typography>
-                  </>
-                )}
-              </Box>
+              {/* Image Carousel removed */}
 
               {/* Listing Details */}
               <Box sx={{ borderTop: `1px solid ${colors.mediumGray}`, pt: 2 }}>
@@ -905,118 +883,50 @@ export default function BrowseListings({ onNavigate }: BrowseListingsProps) {
                 </Box>
               </Box>
 
-              {/* Date, Time, Duration Selection */}
+              {/* Slot Selection UI */}
               <Box sx={{ borderTop: `1px solid ${colors.mediumGray}`, pt: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
-                  Reservation Details
+                  Select an Available Slot
                 </Typography>
-
+                {slotsLoading && <Typography>Loading slots...</Typography>}
+                {slotsError && <Alert severity="error">{slotsError}</Alert>}
+                {!slotsLoading && !slotsError && availableSlots.length === 0 && (
+                  <Typography>No available slots for this listing.</Typography>
+                )}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: 250, overflowY: 'auto', mb: 2 }}>
+                  {availableSlots.map(slot => (
+                    <Box
+                      key={slot._id}
+                      sx={{
+                        border: `2px solid ${selectedSlotId === slot._id ? colors.primary : colors.mediumGray}`,
+                        borderRadius: 2,
+                        p: 1.5,
+                        background: selectedSlotId === slot._id ? `${colors.primary}10` : colors.white,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                      onClick={() => setSelectedSlotId(slot._id)}
+                    >
+                      <Typography sx={{ fontWeight: 600, color: colors.secondary }}>
+                        {new Date(slot.date).toLocaleDateString()} {slot.reservedStartTime} - {slot.reservedEndTime}
+                      </Typography>
+                      {selectedSlotId === slot._id && <Chip label="Selected" color="primary" size="small" />}
+                    </Box>
+                  ))}
+                </Box>
+                {errors.slot && (
+                  <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mt: 0.5 }}>
+                    {errors.slot}
+                  </Typography>
+                )}
                 {submitSuccess && (
                   <Alert severity="success" sx={{ mb: 2 }}>
-                    ✓ Reservation submitted successfully! Check your browser console for details.
+                    ✓ Reservation submitted successfully!
                   </Alert>
                 )}
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Box>
-                    <TextField
-                      label="Date"
-                      type="date"
-                      value={reservationDate || ''}
-                      onChange={(e) => {
-                        const newDate = e.target.value
-                        setReservationDate(newDate)
-                        if (errors.date) setErrors({ ...errors, date: undefined })
-                      }}
-                      onBlur={() => {
-                        // Trigger validation on blur
-                        if (reservationDate) validateForm()
-                      }}
-                      fullWidth
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                      error={!!errors.date}
-                      helperText={errors.date || 'Select today or future date'}
-                      inputProps={{
-                        min: new Date().toISOString().split('T')[0],
-                      }}
-                    />
-                  </Box>
-
-                  <Box>
-                    <TextField
-                      label="Time"
-                      type="time"
-                      value={reservationTime || '10:00'}
-                      onChange={(e) => {
-                        const newTime = e.target.value
-                        setReservationTime(newTime)
-                        if (errors.time) setErrors({ ...errors, time: undefined })
-                      }}
-                      onBlur={() => {
-                        // Trigger validation on blur
-                        if (reservationTime) validateForm()
-                      }}
-                      fullWidth
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                      error={!!errors.time}
-                      helperText={errors.time || 'Select a time'}
-                    />
-                  </Box>
-
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.75 }}>
-                      Duration
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          const newDuration = Math.max(1, reservationDuration - 1)
-                          setReservationDuration(newDuration)
-                          if (errors.duration) setErrors({ ...errors, duration: undefined })
-                        }}
-                        sx={{ minWidth: '40px' }}
-                      >
-                        −
-                      </Button>
-                      <TextField
-                        value={reservationDuration}
-                        onChange={(e) => {
-                          const value = Math.max(1, parseInt(e.target.value) || 1)
-                          setReservationDuration(value)
-                          if (errors.duration) setErrors({ ...errors, duration: undefined })
-                        }}
-                        type="number"
-                        inputProps={{ min: 1, step: 1, style: { textAlign: 'center' } }}
-                        sx={{ width: '70px' }}
-                        size="small"
-                      />
-                      <Typography variant="body2" sx={{ minWidth: '50px' }}>
-                        hours
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          const newDuration = reservationDuration + 1
-                          setReservationDuration(newDuration)
-                          if (errors.duration) setErrors({ ...errors, duration: undefined })
-                        }}
-                        sx={{ minWidth: '40px' }}
-                      >
-                        +
-                      </Button>
-                    </Box>
-                    {errors.duration && (
-                      <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mt: 0.5 }}>
-                        {errors.duration}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
               </Box>
 
               {/* Cost Breakdown */}
