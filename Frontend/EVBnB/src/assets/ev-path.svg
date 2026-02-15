@@ -1,0 +1,9 @@
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path id="ev-path" d="M30 90 Q 120 10, 200 60 Q 320 120, 370 30" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g id="ev-car">
+    <rect x="-18" y="-8" width="36" height="16" rx="6" fill="#fff" stroke="#232323" stroke-width="2"/>
+    <circle cx="-10" cy="8" r="5" fill="#232323"/>
+    <circle cx="10" cy="8" r="5" fill="#232323"/>
+    <rect x="-10" y="-6" width="20" height="8" rx="2" fill="#bdbdbd"/>
+  </g>
+</svg>
