@@ -11,7 +11,25 @@ const reservationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  reservedDate: {
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  noOfSlots: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  schedules: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Schedule'
+  }],
+  price: {
+    type: Number,
+    min: 0
+  },
+  date: {
     type: Date,
     required: true
   },
@@ -23,20 +41,11 @@ const reservationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  estimatedDurationHours: {
-    type: Number,
-    required: true
-  },
-  estimatedPrice: {
-    type: Number,
-    required: true
-  },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled', 'in-progress', 'completed'],
+    enum: ['pending', 'reserved', 'cancelled', 'charging', 'charged'],
     default: 'pending'
   },
-  specialRequests: String,
   createdAt: {
     type: Date,
     default: Date.now

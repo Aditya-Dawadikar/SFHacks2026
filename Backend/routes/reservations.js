@@ -11,6 +11,12 @@ router.get('/tenant/:tenantId', reservationController.getReservationsByTenant);
 // GET reservations by listing (must be before /:id)
 router.get('/listing/:listingId', reservationController.getReservationsByListing);
 
+// GET reservations by tenant (must be before /:id)
+router.get('/tenant/:tenantId', reservationController.getReservationsByTenant);
+
+// GET reservations by owner (must be before /:id)
+router.get('/owner/:ownerId', reservationController.getReservationsByOwner);
+
 // GET reservation by ID
 router.get('/:id', reservationController.getReservationById);
 
