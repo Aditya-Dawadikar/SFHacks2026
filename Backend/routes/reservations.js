@@ -5,14 +5,14 @@ const reservationController = require('../controllers/reservationController');
 // GET all reservations
 router.get('/', reservationController.getAllReservations);
 
-// GET reservation by ID
-router.get('/:id', reservationController.getReservationById);
-
-// GET reservations by tenant
+// GET reservations by tenant (must be before /:id)
 router.get('/tenant/:tenantId', reservationController.getReservationsByTenant);
 
-// GET reservations by owner
+// GET reservations by owner (must be before /:id)
 router.get('/owner/:ownerId', reservationController.getReservationsByOwner);
+
+// GET reservation by ID
+router.get('/:id', reservationController.getReservationById);
 
 // POST create new reservation
 router.post('/', reservationController.createReservation);
