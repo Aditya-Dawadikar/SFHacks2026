@@ -64,7 +64,22 @@ exports.createListing = async (req, res) => {
 
     // Generate and save hourly schedules
     const schedulesData = generateHourlySchedules(savedListing._id, ownerId, startTime, endTime);
-    const createdSchedules = await Schedule.insertMany(schedulesData);
+    if (schedulesData.length === 0) {
+      await Listing.findByIdAndDelete(savedListing._id);
+      return res.status(400).json({
+        error: 'startTime and endTime must be at least 1 hour apart to generate slots. Use full ISO format, e.g. "2026-02-15T08:00:00.000Z" and "2026-02-15T20:00:00.000Z"'
+      });
+    }
+    let createdSchedules;
+    try {
+      createdSchedules = await Schedule.insertMany(schedulesData);
+    } catch (scheduleError) {
+      await Listing.findByIdAndDelete(savedListing._id);
+      return res.status(400).json({
+        error: 'Failed to create schedules',
+        details: scheduleError.message
+      });
+    }
 
     const populated = await savedListing.populate('ownerId', 'firstName lastName email');
     res.status(201).json({

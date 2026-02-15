@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Reservation = require('../models/Reservation');
 const Listing = require('../models/Listing');
+const Schedule = require('../models/Schedule');
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -9,11 +10,14 @@ const validateReservationInput = (data, isCreate = true) => {
   const errors = [];
 
   if (isCreate) {
-    const required = ['tenantId', 'listingId', 'noOfSlots', 'date', 'startTime', 'endTime'];
+    const required = ['tenantId', 'listingId', 'date', 'reservedStartTime', 'reservedEndTime', 'schedules'];
     for (const field of required) {
       if (data[field] == null || data[field] === '') {
         errors.push(`${field} is required`);
       }
+    }
+    if (data.schedules && Array.isArray(data.schedules) && data.schedules.length === 0) {
+      errors.push('schedules must contain at least one slot ID');
     }
   }
 
@@ -23,10 +27,8 @@ const validateReservationInput = (data, isCreate = true) => {
   if (data.tenantId != null && !isValidObjectId(data.tenantId)) {
     errors.push('Invalid tenantId format');
   }
-
-  const noOfSlots = Number(data.noOfSlots);
-  if (data.noOfSlots != null && (isNaN(noOfSlots) || noOfSlots < 1)) {
-    errors.push('noOfSlots must be a positive integer');
+  if (data.ownerId != null && !isValidObjectId(data.ownerId)) {
+    errors.push('Invalid ownerId format');
   }
 
   const price = Number(data.price);
@@ -35,7 +37,7 @@ const validateReservationInput = (data, isCreate = true) => {
   }
 
   if (data.schedules != null && !Array.isArray(data.schedules)) {
-    errors.push('schedules must be an array');
+    errors.push('schedules must be an array of slot IDs');
   }
   if (data.schedules != null && Array.isArray(data.schedules)) {
     const invalidIds = data.schedules.filter(id => !isValidObjectId(id));
@@ -44,8 +46,8 @@ const validateReservationInput = (data, isCreate = true) => {
     }
   }
 
-  if (data.status != null && !['pending_payment', 'reserved', 'active', 'completed', 'cancelled', 'expired'].includes(data.status)) {
-    errors.push('status must be one of: pending_payment, reserved, active, completed, cancelled, expired');
+  if (data.status != null && !['pending', 'reserved', 'cancelled', 'charging', 'charged'].includes(data.status)) {
+    errors.push('status must be one of: pending, reserved, cancelled, charging, charged');
   }
 
   return errors;
@@ -59,12 +61,55 @@ exports.createReservation = async (req, res) => {
       return res.status(400).json({ errors: validationErrors });
     }
 
-    const reservationData = { ...req.body, schedules: req.body.schedules || [] };
+    const { listingId, schedules: scheduleIds } = req.body;
+    const schedules = scheduleIds || [];
+
+    // Fetch listing to get ownerId
+    const listing = await Listing.findById(listingId).select('ownerId');
+    if (!listing) {
+      return res.status(404).json({ errors: ['Listing not found'] });
+    }
+
+    // Derive noOfSlots from schedules, ownerId from listing
+    const reservationData = {
+      ...req.body,
+      schedules,
+      noOfSlots: schedules.length,
+      ownerId: listing.ownerId
+    };
+
+    // Validate slots
+    if (scheduleIds && scheduleIds.length > 0) {
+      const slots = await Schedule.find({ _id: { $in: scheduleIds } });
+      if (slots.length !== scheduleIds.length) {
+        return res.status(400).json({ errors: ['One or more schedule IDs do not exist'] });
+      }
+      const wrongListing = slots.some(s => s.listingId.toString() !== listingId.toString());
+      if (wrongListing) {
+        return res.status(400).json({ errors: ['All slots must belong to the specified listing'] });
+      }
+      const unavailable = slots.some(s => !s.isAvailable || s.isBlocked);
+      if (unavailable) {
+        return res.status(400).json({ errors: ['One or more slots are not available for booking'] });
+      }
+    }
+
     const newReservation = new Reservation(reservationData);
     const savedReservation = await newReservation.save();
+
+    // Mark slots as unavailable (reserved)
+    if (scheduleIds && scheduleIds.length > 0) {
+      await Schedule.updateMany(
+        { _id: { $in: scheduleIds } },
+        { $set: { isAvailable: false, updatedAt: new Date() } }
+      );
+    }
+
     const populated = await savedReservation.populate([
-      { path: 'listingId', select: 'title location ownerId' },
-      { path: 'tenantId', select: 'firstName lastName email' }
+      { path: 'listingId', select: 'title location ownerId pricePerHour' },
+      { path: 'tenantId', select: 'firstName lastName email' },
+      { path: 'ownerId', select: 'firstName lastName email' },
+      { path: 'schedules', select: 'openingTime closingTime listingId' }
     ]);
     res.status(201).json(populated);
   } catch (error) {
@@ -76,8 +121,10 @@ exports.createReservation = async (req, res) => {
 exports.getAllReservations = async (req, res) => {
   try {
     const reservations = await Reservation.find()
-      .populate('listingId', 'title location ownerId')
-      .populate('tenantId', 'firstName lastName email');
+      .populate('listingId', 'title location ownerId pricePerHour')
+      .populate('tenantId', 'firstName lastName email')
+      .populate('ownerId', 'firstName lastName email')
+      .populate('schedules', 'openingTime closingTime listingId isAvailable');
     res.status(200).json(reservations);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -91,8 +138,10 @@ exports.getReservationById = async (req, res) => {
       return res.status(400).json({ error: 'Invalid reservation ID' });
     }
     const reservation = await Reservation.findById(req.params.id)
-      .populate('listingId', 'title location ownerId')
-      .populate('tenantId', 'firstName lastName email');
+      .populate('listingId', 'title location ownerId pricePerHour')
+      .populate('tenantId', 'firstName lastName email')
+      .populate('ownerId', 'firstName lastName email')
+      .populate('schedules', 'openingTime closingTime listingId isAvailable');
     if (!reservation) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
@@ -114,14 +163,31 @@ exports.updateReservation = async (req, res) => {
       return res.status(400).json({ errors: validationErrors });
     }
 
+    const existingReservation = await Reservation.findById(req.params.id);
+    if (!existingReservation) {
+      return res.status(404).json({ error: 'Reservation not found' });
+    }
+
+    // If status changed to cancelled, release the slots
+    if (req.body.status === 'cancelled' && existingReservation.status !== 'cancelled') {
+      if (existingReservation.schedules && existingReservation.schedules.length > 0) {
+        await Schedule.updateMany(
+          { _id: { $in: existingReservation.schedules } },
+          { $set: { isAvailable: true, updatedAt: new Date() } }
+        );
+      }
+    }
+
     const updateData = { ...req.body, updatedAt: new Date() };
     const reservation = await Reservation.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
     )
-      .populate('listingId', 'title location ownerId')
-      .populate('tenantId', 'firstName lastName email');
+      .populate('listingId', 'title location ownerId pricePerHour')
+      .populate('tenantId', 'firstName lastName email')
+      .populate('ownerId', 'firstName lastName email')
+      .populate('schedules', 'openingTime closingTime listingId isAvailable');
     if (!reservation) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
@@ -137,10 +203,18 @@ exports.deleteReservation = async (req, res) => {
     if (!isValidObjectId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid reservation ID' });
     }
-    const reservation = await Reservation.findByIdAndDelete(req.params.id);
+    const reservation = await Reservation.findById(req.params.id);
     if (!reservation) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
+    // Release slots before deleting reservation
+    if (reservation.schedules && reservation.schedules.length > 0) {
+      await Schedule.updateMany(
+        { _id: { $in: reservation.schedules } },
+        { $set: { isAvailable: true, updatedAt: new Date() } }
+      );
+    }
+    await Reservation.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Reservation deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -154,7 +228,8 @@ exports.getReservationsByTenant = async (req, res) => {
       return res.status(400).json({ error: 'Invalid tenant ID' });
     }
     const reservations = await Reservation.find({ tenantId: req.params.tenantId })
-      .populate('listingId', 'title location ownerId');
+      .populate('listingId', 'title location ownerId pricePerHour')
+      .populate('schedules', 'openingTime closingTime listingId isAvailable');
     res.status(200).json(reservations);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -170,8 +245,9 @@ exports.getReservationsByOwner = async (req, res) => {
     const listings = await Listing.find({ ownerId: req.params.ownerId }).select('_id');
     const listingIds = listings.map((l) => l._id);
     const reservations = await Reservation.find({ listingId: { $in: listingIds } })
-      .populate('listingId', 'title location ownerId')
-      .populate('tenantId', 'firstName lastName email');
+      .populate('listingId', 'title location ownerId pricePerHour')
+      .populate('tenantId', 'firstName lastName email')
+      .populate('schedules', 'openingTime closingTime listingId isAvailable');
     res.status(200).json(reservations);
   } catch (error) {
     res.status(500).json({ error: error.message });
