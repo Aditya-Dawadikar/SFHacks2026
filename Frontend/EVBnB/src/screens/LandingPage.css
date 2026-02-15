@@ -1,3 +1,23 @@
+.hero-btn-group {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.cta-btn.tenant-btn {
+  background: linear-gradient(90deg, #00e6a7 0%, #00bfff 100%);
+  color: #18191a;
+}
+.cta-btn.owner-btn {
+  background: linear-gradient(90deg, #fff 0%, #bdbdbd 100%);
+  color: #18191a;
+}
+.cta-btn.tenant-btn:hover {
+  background: linear-gradient(90deg, #00bfff 0%, #00e6a7 100%);
+}
+.cta-btn.owner-btn:hover {
+  background: linear-gradient(90deg, #bdbdbd 0%, #fff 100%);
+}
 .footer-overlay-content {
   position: absolute;
   top: 0;

@@ -19,8 +19,12 @@ const FOLDS = [
 ];
 
 const LandingPage = () => {
+
     const sectionRefs = [useRef(null), useRef(null), useRef(null), useRef(null), useRef(null)];
     const [activeFold, setActiveFold] = useState(0);
+
+
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -72,7 +76,10 @@ const LandingPage = () => {
             </div>
             <main className="landing-main">
                 {/* Fold 1: Hero */}
-                <section ref={sectionRefs[0]} className="hero-section fold-section">
+                <section
+                    ref={sectionRefs[0]}
+                    className="hero-section fold-section"
+                >
                     <div className="hero-video-bg-wrapper">
                         <video
                             className="hero-video-bg"
@@ -85,12 +92,18 @@ const LandingPage = () => {
                         <div className="hero-overlay-content">
                             <h1>Charge Ahead with EVBnB</h1>
                             <p>Find, book, and rent EV chargers anywhere. Empowering drivers and owners for a greener tomorrow.</p>
-                            <Link to="/browse" className="cta-btn">Browse Listings</Link>
+                            <div className="hero-btn-group">
+                                <Link to="/tenant" className="cta-btn tenant-btn">Find a Charger</Link>
+                                <Link to="/owner" className="cta-btn owner-btn">List Your Charger</Link>
+                            </div>
                         </div>
                     </div>
                 </section>
                 {/* Fold 2: Charge (left media, right text) */}
-                <section ref={sectionRefs[1]} className="fold-section fold-charge split-fold">
+                <section
+                    ref={sectionRefs[1]}
+                    className="fold-section fold-charge split-fold"
+                >
                     <div className="split-fold-media split-fold-media-left">
                         {/* Replace with real image/video as needed */}
                         <img src={bookSlotImg} alt="Book Slot" className="split-fold-img" />
@@ -101,7 +114,10 @@ const LandingPage = () => {
                     </div>
                 </section>
                 {/* Fold 3: Maps (left text, right media) */}
-                <section ref={sectionRefs[2]} className="fold-section fold-maps split-fold">
+                <section
+                    ref={sectionRefs[2]}
+                    className="fold-section fold-maps split-fold"
+                >
                     <div className="split-fold-content split-fold-content-left">
                         <h2>Find Chargers on the Map</h2>
                         <p>Discover nearby chargers, filter by type, and navigate with ease. Our interactive map makes finding your next charge effortless.</p>
@@ -112,7 +128,10 @@ const LandingPage = () => {
                     </div>
                 </section>
                 {/* Fold 4: Earn (left media, right text) */}
-                <section ref={sectionRefs[3]} className="fold-section fold-earn split-fold">
+                <section
+                    ref={sectionRefs[3]}
+                    className="fold-section fold-earn split-fold"
+                >
                     <div className="split-fold-media split-fold-media-left">
                         {/* Use earn.png for the Earn fold */}
                         <img src={earnImg} alt="Earn" className="split-fold-img" />
@@ -123,7 +142,10 @@ const LandingPage = () => {
                     </div>
                 </section>
                 {/* Fold 5: Footer with background video */}
-                <section ref={sectionRefs[4]} className="fold-section fold-footer">
+                <section
+                    ref={sectionRefs[4]}
+                    className="fold-section fold-footer"
+                >
                     <div className="footer-video-bg-wrapper">
                         <video
                             className="footer-video-bg"
